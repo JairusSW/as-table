@@ -1,0 +1,45 @@
+{
+  "name": "table-as",
+  "version": "1.0.0",
+  "description": "The only table generator you'll need for AssemblyScript",
+  "types": "assembly/index.ts",
+  "author": "Jairus Tanaka",
+  "contributors": [],
+  "license": "MIT",
+  "scripts": {
+    "test": "wasmtime ./build/test.wasm",
+    "pretest": "asc assembly/test.ts -o build/test.wasm --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json",
+    "prettier": "as-prettier -w ."
+  },
+  "devDependencies": {
+    "@assemblyscript/wasi-shim": "^0.1.0",
+    "as-rainbow": "^0.1.0",
+    "assemblyscript": "^0.27.22",
+    "assemblyscript-prettier": "^3.0.1"
+  },
+  "dependencies": {},
+  "overrides": {
+    "assemblyscript": "$assemblyscript"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JairusSW/as-table.git"
+  },
+  "keywords": [
+    "assemblyscript",
+    "table",
+    "text",
+    "formatting",
+    "ascii",
+    "rows",
+    "align"
+  ],
+  "bugs": {
+    "url": "https://github.com/JairusSW/as-table/issues"
+  },
+  "homepage": "https://github.com/JairusSW/as-table#readme",
+  "type": "module",
+  "publishConfig": {
+    "@JairusSW:registry": "https://npm.pkg.github.com"
+  }
+}
