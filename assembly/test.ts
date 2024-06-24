@@ -1,16 +1,10 @@
 import { createTable } from ".";
-
-console.log(createTable([
-    ['\u001b[31m0A\u001b[0m', '\u001b[32m0B\u001b[0m', '\u001b[33m0Cadfadfad\u001b[0m'],
-    ['\u001b[34m1A\u001b[0m', '\u001b[35m1B\u001b[0m', '\u001b[36m1C\u001b[0m'],
-    ['\u001b[37m2A\u001b[0m', '\u001b[38m2B\u001b[0m', '\u001b[39m2C\u001b[0m']
-]) + "\n\n");
-
+import { rainbow } from "as-rainbow";
 
 const table = createTable([
-    ["0A", "0B", "0C\nLINE\nNEW"],
-    ["1A", "1B", "1C"],
-    ["2A", "2B", "2C"]
+    [rainbow.red("0A"), rainbow.green("0B"), rainbow.yellow("0C")],
+    [rainbow.blue("1A"), rainbow.magenta("1B"), rainbow.cyan("1C")],
+    [rainbow.white("2A"), rainbow.dimMk("2B"), rainbow.blackBright("2C")]
 ]);
 
 console.log(table);

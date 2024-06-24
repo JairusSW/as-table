@@ -3,7 +3,7 @@
 |  _  ||   __| ___|_   _||  _  || __  ||  |   |   __|
 |     ||__   ||___| | |  |     || __ -||  |__ |   __|
 |__|__||_____|      |_|  |__|__||_____||_____||_____|
-v1.0.0
+v1.0.1
 </pre>
 </h5>
 
@@ -26,15 +26,14 @@ const table = createTable([
 
 console.log(table);
 
-// ┌────────────────────────────────┐
-// │    0A    │    0B    │    0C    │
-// ├────────────────────────────────┤
-// │    1A    │    1B    │    1C    │
-// │    2A    │    2B    │    2C    │
-// └────────────────────────────────┘
+// ┌────────┬────────┬────────┐
+// │   0A   │   0B   │   0C   │
+// ├────────┼────────┼────────┤
+// │   1A   │   1B   │   1C   │
+// ├────────┼────────┼────────┤
+// │   2A   │   2B   │   2C   │
+// └────────┴────────┴────────┘
 ```
-
-Note: I usually never use AI, but I did ask AI to make most of this because it was a pretty simple task and I was in a rush. Its really inefficient though, so I'll probably rewrite it and make it nice.
 
 ## Issues
 

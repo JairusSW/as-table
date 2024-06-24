@@ -1,6 +1,6 @@
 {
   "name": "table-as",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The only table generator you'll need for AssemblyScript",
   "types": "assembly/index.ts",
   "author": "Jairus Tanaka",
@@ -8,14 +8,16 @@
   "license": "MIT",
   "scripts": {
     "test": "wasmtime ./build/test.wasm",
-    "pretest": "asc assembly/test.ts -o build/test.wasm --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json",
+    "pretest": "asc assembly/test.ts -o build/test.wasm --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json --transform json-as/transform",
     "prettier": "as-prettier -w ."
   },
   "devDependencies": {
     "@assemblyscript/wasi-shim": "^0.1.0",
     "as-rainbow": "^0.1.0",
     "assemblyscript": "^0.27.22",
-    "assemblyscript-prettier": "^3.0.1"
+    "assemblyscript-prettier": "^3.0.1",
+    "json-as": "^0.9.8",
+    "visitor-as": "^0.11.4"
   },
   "dependencies": {},
   "overrides": {
