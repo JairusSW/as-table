@@ -155,7 +155,7 @@ class Table {
                 lines.push(headerRow);
             }
         }
-
+        
         return lines.join("\n");
     }
 }
