@@ -1,27 +1,18 @@
-import { HeaderPosition, PaddingOptions, TablePosition, TableStructure, TableAlignment } from "./types";
-
-class TableOptions {
-    position: TablePosition = TablePosition.Center;
-    alignment: TableAlignment = TableAlignment.Center;
-    padding: PaddingOptions = new PaddingOptions();
-    structure: TableStructure = new TableStructure();
-    headerPosition: HeaderPosition = HeaderPosition.Top;
-}
+import { TableAlignment, TableOptions } from "./types";
 
 class Table {
     public options: TableOptions;
     public rows: string[][];
     public columns: string[][] = [];
 
-    public padding: i32 = 4;
-
     constructor(table: string[][], options: TableOptions = new TableOptions()) {
         this.options = options;
         this.rows = table;
-        for (let i = 0; i < table.length; i++) {
+        // Transpose rows to columns
+        for (let j = 0; j < table[0].length; j++) {
             this.columns.push([]);
-            for (let j = 0; j < table[i].length; j++) {
-                this.columns[i].push(table[j][i]);
+            for (let i = 0; i < table.length; i++) {
+                this.columns[j].push(table[i][j]);
             }
         }
     }
@@ -43,123 +34,216 @@ class Table {
         return result;
     }
 
-    draw(): string {
-        const fmt = this.options.structure;
-        const lines: string[] = [];
-
-        const columnWidths: i32[] = new Array<i32>(this.columns.length).fill(0);
-
-        // Calculate column widths
+    private calculateColumnWidths(): i32[] {
+        const widths: i32[] = new Array<i32>(this.columns.length).fill(0);
         for (let i = 0; i < this.columns.length; i++) {
             for (let j = 0; j < this.columns[i].length; j++) {
-                const cellLength = this.removeANSIEscapeSequences(this.columns[i][j]).length;
-                if (cellLength > columnWidths[i]) {
-                    columnWidths[i] = cellLength;
+                const cellLines = this.columns[i][j].split("\n");
+                for (let k = 0; k < cellLines.length; k++) {
+                    const line = cellLines[k];
+                    const cellLength = this.removeANSIEscapeSequences(line).length;
+                    if (cellLength > widths[i]) {
+                        widths[i] = cellLength;
+                    }
+                }
+            }
+            // Add padding to the width
+            widths[i] += 2 * this.options.padding.width;
+        }
+        return widths;
+    }
+
+    private calculateRowHeights(): i32[] {
+        const heights: i32[] = new Array<i32>(this.rows.length).fill(0);
+        for (let i = 0; i < this.rows.length; i++) {
+            for (let j = 0; j < this.rows[i].length; j++) {
+                const cellLines = this.rows[i][j].split("\n").length;
+                if (cellLines > heights[i]) {
+                    heights[i] = cellLines;
                 }
             }
         }
+        return heights;
+    }
 
-        if (this.options.headerPosition === HeaderPosition.Top) {
-            // Top header position
-            lines.push(fmt.topLeft + fmt.topBody.repeat(
-                columnWidths.reduce((a, b) => a + b, 0) + (this.padding * 2 + 1) * this.columns.length - 1
-            ) + fmt.topRight);
+    private padString(str: string, length: i32, alignment: TableAlignment): string {
+        const strippedStr = this.removeANSIEscapeSequences(str);
+        const padding = length - strippedStr.length;
+        let leftPadding = 0;
+        let rightPadding = 0;
 
-            for (let row = 0; row < 1; row++) { // Only one header row
-                let headerRow = fmt.bodyLeft;
-                for (let index = 0; index < this.columns.length; index++) {
-                    const col = this.columns[index];
-                    const cellLength = this.removeANSIEscapeSequences(col[0]).length;
-                    let padding: string = "";
-
-                    if (this.options.alignment === TableAlignment.Left) {
-                        padding = " ".repeat(this.padding * 2);
-                        headerRow += padding + col[0];
-                    } else if (this.options.alignment === TableAlignment.Right) {
-                        padding = " ".repeat((columnWidths[index] + this.padding * 2 - cellLength));
-                        headerRow += padding + col[0];
-                    } else {
-                        padding = " ".repeat(i32(Math.floor((columnWidths[index] + this.padding * 2 - cellLength) / 2)));
-                        headerRow += padding + col[0] + padding + " ".repeat((columnWidths[index] + this.padding * 2) % 2);
-                    }
-
-                    if (index < this.columns.length - 1) {
-                        headerRow += fmt.bodyJoin;
-                    }
-                }
-                headerRow += fmt.bodyRight;
-                lines.push(headerRow);
-            }
-
-            lines.push(fmt.joinLeft + fmt.joinBody.repeat(
-                columnWidths.reduce((a, b) => a + b, 0) + (this.padding * 2 + 1) * this.columns.length - 1
-            ) + fmt.joinRight);
+        switch (alignment) {
+            case TableAlignment.Left:
+                rightPadding = padding;
+                break;
+            case TableAlignment.Right:
+                leftPadding = padding;
+                break;
+            case TableAlignment.Center:
+                leftPadding = i32(Math.floor(padding / 2));
+                rightPadding = i32(Math.ceil(padding / 2));
+                break;
         }
 
-        // Body rows
-        for (let row = 1; row < this.rows.length; row++) { // Start from 1 to skip header row
-            let bodyRow = fmt.bodyLeft;
-            for (let index = 0; index < this.columns.length; index++) {
-                const col = this.columns[index];
-                const cellLength = this.removeANSIEscapeSequences(col[row]).length;
-                let padding: string = "";
+        return " ".repeat(leftPadding) + str + " ".repeat(rightPadding);
+    }
 
-                if (this.options.alignment === TableAlignment.Left) {
-                    padding = " ".repeat(this.padding * 2);
-                    bodyRow += padding + col[row];
-                } else if (this.options.alignment === TableAlignment.Right) {
-                    padding = " ".repeat((columnWidths[index] + this.padding * 2 - cellLength));
-                    bodyRow += padding + col[row];
+    private padCell(cell: string, width: i32, height: i32, alignment: TableAlignment): string[] {
+        const lines = cell.split("\n");
+        const paddedLines: string[] = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            paddedLines.push(this.padString(lines[i], width, alignment));
+        }
+
+        // Add padding to make the height correct
+        const paddingLines = height - lines.length;
+        if (paddingLines > 0) {
+            for (let i = 0; i < paddingLines; i++) {
+                if (alignment === TableAlignment.Center) {
+                    paddedLines.unshift(" ".repeat(width));
+                    if (paddedLines.length < height) {
+                        paddedLines.push(" ".repeat(width));
+                    }
+                } else if (alignment === TableAlignment.Top || alignment === TableAlignment.Left) {
+                    paddedLines.push(" ".repeat(width));
                 } else {
-                    padding = " ".repeat(i32(Math.floor((columnWidths[index] + this.padding * 2 - cellLength) / 2)));
-                    bodyRow += padding + col[row] + padding + " ".repeat((columnWidths[index] + this.padding * 2) % 2);
-                }
-
-                if (index < this.columns.length - 1) {
-                    bodyRow += fmt.bodyJoin;
+                    paddedLines.unshift(" ".repeat(width));
                 }
             }
-            bodyRow += fmt.bodyRight;
-            lines.push(bodyRow);
         }
 
-        if (this.options.headerPosition === HeaderPosition.Bottom) {
-            // Bottom header position
-            lines.push(fmt.bottomLeft + fmt.bottomBody.repeat(
-                columnWidths.reduce((a, b) => a + b, 0) + (this.padding * 2 + 1) * this.columns.length - 1
-            ) + fmt.bottomRight);
+        return paddedLines;
+    }
 
-            for (let row = 0; row < 1; row++) { // Only one header row
-                let headerRow = fmt.bodyLeft;
-                for (let index = 0; index < this.columns.length; index++) {
-                    const col = this.columns[index];
-                    const cellLength = this.removeANSIEscapeSequences(col[0]).length;
-                    let padding: string = "";
+    draw(): string {
+        const widths = this.calculateColumnWidths();
+        const heights = this.calculateRowHeights();
+        const structure = this.options.structure;
+        let result = '';
 
-                    if (this.options.alignment === TableAlignment.Left) {
-                        padding = " ".repeat(this.padding * 2);
-                        headerRow += padding + col[0];
-                    } else if (this.options.alignment === TableAlignment.Right) {
-                        padding = " ".repeat((columnWidths[index] + this.padding * 2 - cellLength));
-                        headerRow += padding + col[0];
-                    } else {
-                        padding = " ".repeat(i32(Math.floor((columnWidths[index] + this.padding * 2 - cellLength) / 2)));
-                        headerRow += padding + col[0] + padding + " ".repeat((columnWidths[index] + this.padding * 2) % 2);
-                    }
-
-                    if (index < this.columns.length - 1) {
-                        headerRow += fmt.bodyJoin;
-                    }
-                }
-                headerRow += fmt.bodyRight;
-                lines.push(headerRow);
+        // Draw top border
+        result += structure.topLeft;
+        for (let i = 0; i < widths.length; i++) {
+            result += structure.topBody.repeat(widths[i]);
+            if (i < widths.length - 1) {
+                result += structure.topJoin;
             }
         }
-        
-        return lines.join("\n");
+        result += structure.topRight + '\n';
+
+        // Draw rows
+        for (let i = 0; i < this.rows.length; i++) {
+            const paddedCells: string[][] = [];
+            for (let j = 0; j < this.rows[i].length; j++) {
+                paddedCells.push(this.padCell(this.rows[i][j], widths[j], heights[i], this.options.alignment));
+            }
+
+            for (let k = 0; k < heights[i]; k++) {
+                result += structure.bodyLeft;
+                for (let j = 0; j < paddedCells.length; j++) {
+                    result += paddedCells[j][k];
+                    if (j < paddedCells.length - 1) {
+                        result += structure.bodyJoin;
+                    }
+                }
+                result += structure.bodyRight + '\n';
+            }
+
+            // Draw join row if not the last row
+            if (i < this.rows.length - 1) {
+                result += structure.joinLeft;
+                for (let j = 0; j < widths.length; j++) {
+                    result += structure.joinBody.repeat(widths[j]);
+                    if (j < widths.length - 1) {
+                        result += structure.joinJoin;
+                    }
+                }
+                result += structure.joinRight + '\n';
+            }
+        }
+
+        // Draw bottom border
+        result += structure.bottomLeft;
+        for (let i = 0; i < widths.length; i++) {
+            result += structure.bottomBody.repeat(widths[i]);
+            if (i < widths.length - 1) {
+                result += structure.bottomJoin;
+            }
+        }
+        result += structure.bottomRight;
+
+        return result;
     }
 }
 
 export function createTable(table: string[][], options: TableOptions = new TableOptions()): string {
     return new Table(table, options).draw();
+}
+
+function padCell(cell: string, width: i32, height: i32, alignment: TableAlignment): string[] {
+    const lines = cell.split("\n");
+    const paddedLines: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        paddedLines.push(padString(lines[i], width, alignment));
+    }
+
+    // Add padding to make the height correct
+    const paddingLines = height - lines.length;
+    if (paddingLines > 0) {
+        for (let i = 0; i < paddingLines; i++) {
+            if (alignment === TableAlignment.Center) {
+                paddedLines.unshift(" ".repeat(width));
+                if (paddedLines.length < height) {
+                    paddedLines.push(" ".repeat(width));
+                }
+            } else if (alignment === TableAlignment.Top || alignment === TableAlignment.Left) {
+                paddedLines.push(" ".repeat(width));
+            } else {
+                paddedLines.unshift(" ".repeat(width));
+            }
+        }
+    }
+
+    return paddedLines;
+}
+
+function padString(str: string, length: i32, alignment: TableAlignment): string {
+    const strippedStr = removeANSIEscapeSequences(str);
+    const padding = length - strippedStr.length;
+    let leftPadding = 0;
+    let rightPadding = 0;
+
+    switch (alignment) {
+        case TableAlignment.Left:
+            rightPadding = padding;
+            break;
+        case TableAlignment.Right:
+            leftPadding = padding;
+            break;
+        case TableAlignment.Center:
+            leftPadding = Math.floor(padding / 2);
+            rightPadding = Math.ceil(padding / 2);
+            break;
+    }
+
+    return " ".repeat(leftPadding) + str + " ".repeat(rightPadding);
+}
+
+function removeANSIEscapeSequences(str: string): string {
+    let result = "";
+    let isInEscapeSequence = false;
+
+    for (let i = 0; i < str.length; i++) {
+        if (str.charAt(i) === "\u001b" && str.charAt(i + 1) === "[") {
+            isInEscapeSequence = true;
+        } else if (isInEscapeSequence && str.charAt(i) === "m") {
+            isInEscapeSequence = false;
+        } else if (!isInEscapeSequence) {
+            result += str.charAt(i);
+        }
+    }
+
+    return result;
 }

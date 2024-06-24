@@ -8,7 +8,7 @@ console.log(createTable([
 
 
 const table = createTable([
-    ["0A", "0B", "0C"],
+    ["0A", "0B", "0C\nLINE\nNEW"],
     ["1A", "1B", "1C"],
     ["2A", "2B", "2C"]
 ]);

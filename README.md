@@ -34,15 +34,7 @@ console.log(table);
 // └────────────────────────────────┘
 ```
 
-## Contact
-
-Contact me at:
-
-Email: `me@jairus.dev`
-
-GitHub: `JairusSW`
-
-Discord: `jairussw`
+Note: I usually never use AI, but I did ask AI to make most of this because it was a pretty simple task and I was in a rush. Its really inefficient though, so I'll probably rewrite it and make it nice.
 
 ## Issues
 

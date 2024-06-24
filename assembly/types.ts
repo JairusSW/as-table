@@ -7,18 +7,18 @@ export enum TablePosition {
 export enum TableAlignment {
     Left,
     Center,
-    Right
+    Right,
+    Top
 }
 
-
 export class TableOptions {
-    position: TablePosition = TablePosition.Center;
+    alignment: TableAlignment = TableAlignment.Center;
     padding: PaddingOptions = new PaddingOptions();
     structure: TableStructure = new TableStructure();
-    headerPosition: HeaderPosition = HeaderPosition.Top;
 }
 
 export enum HeaderPosition {
+    None,
     Top,
     Bottom,
     Left,
